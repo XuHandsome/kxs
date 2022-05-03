@@ -14,10 +14,6 @@
 - [x]   namespace/add
 - [x]   namespace/delete
 
-#### Pod
-- [ ]   pod/list
-- [ ]   ...
-
 
 ### 接口错误代码
 | 错误代码  | 说明        |
