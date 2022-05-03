@@ -43,7 +43,7 @@ def cluster_add():
         return jsonify({"code": 200, "msg": "添加集群成功"})
     except Exception as e:
         current_app.logger.error(e)
-        return jsonify({"code": 10003, "msg": "添加集群失败"})
+        return jsonify({"code": 10002, "msg": "添加集群失败"})
 
 @cluster.route("/list", methods=["GET"])
 def cluster_list():
