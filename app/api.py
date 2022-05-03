@@ -1,10 +1,12 @@
 from flask import current_app, jsonify, request, Blueprint
 from .models import Cluster
 from . import db
-from libs.cluster import Kubernetes
+import json
+from libs.k8s_client import Kubernetes
 
 # 创建蓝图对象
 cluster = Blueprint("cluster", __name__)
+namespace = Blueprint("namespace", __name__)
 
 
 # 添加集群
@@ -147,3 +149,106 @@ def cluster_list():
         data_list.append(c.to_dict())
 
     return jsonify({"code": 200, "msg": "查询集群成功", "data": {"total": total, "items": data_list}})
+
+
+@namespace.route("/add", methods=["POST"])
+def namespace_add():
+    data = request.json
+    cluster_id = data.get("cluster_id")
+    namespace_name = data.get("namespace")
+
+    if not cluster_id:
+        return jsonify({"code": 10004, "msg": "参数不完整"})
+
+    # 查询集群是否存在
+    try:
+        cluster_info = Cluster.query.filter_by(id=cluster_id).first()
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify({"code": 10002, "msg": "查询集群失败"})
+
+    if cluster_info is None:
+        return jsonify({"code": 10009, "msg": "集群不存在"})
+
+    if cluster_info.status == "deleted":
+        return jsonify({"code": 10009, "msg": "集群已下线"})
+    elif cluster_info.status == "inactive":
+        return jsonify({"code": 10009, "msg": "集群连接失败"})
+
+    api_host = cluster_info.api_host
+    token = cluster_info.token
+    k8s = Kubernetes(api_host=api_host, token=token)
+    create_ns = k8s.create_namespace(namespace_name)
+    try:
+        create_ns_status = create_ns.status.to_dict()
+        return jsonify({"code": 200, "msg": "创建命名空间成功", "k8s_response": create_ns_status})
+    except Exception as e:
+        create_ns_status = json.loads(create_ns.body).get('message')
+        return jsonify({"code": 10002, "msg": "创建命名空间失败", "k8s_response": create_ns_status})
+
+
+@namespace.route("/delete", methods=["DELETE"])
+def namespace_delete():
+    data = request.json
+    cluster_id = data.get("cluster_id")
+    namespace_name = data.get("namespace")
+
+    if not cluster_id:
+        return jsonify({"code": 10004, "msg": "参数不完整"})
+
+    # 查询集群是否存在
+    try:
+        cluster_info = Cluster.query.filter_by(id=cluster_id).first()
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify({"code": 10002, "msg": "查询集群失败"})
+
+    if cluster_info is None:
+        return jsonify({"code": 10009, "msg": "集群不存在"})
+
+    if cluster_info.status == "deleted":
+        return jsonify({"code": 10009, "msg": "集群已下线"})
+    elif cluster_info.status == "inactive":
+        return jsonify({"code": 10009, "msg": "集群连接失败"})
+
+    api_host = cluster_info.api_host
+    token = cluster_info.token
+    k8s = Kubernetes(api_host=api_host, token=token)
+    delete_ns = k8s.delete_namespace(namespace_name)
+    try:
+        delete_ns_status = eval(delete_ns.status)
+        return jsonify({"code": 200, "msg": "删除命名空间成功", "k8s_response": delete_ns_status})
+    except Exception as e:
+        delete_ns_status = json.loads(delete_ns.body).get('message')
+        return jsonify({"code": 10002, "msg": "删除命名空间失败", "k8s_response": delete_ns_status})
+
+
+@namespace.route("/list", methods=["GET"])
+def namespace_list():
+    data = request.json
+    cluster_id = data.get("cluster_id")
+
+    if not cluster_id:
+        return jsonify({"code": 10004, "msg": "参数不完整"})
+
+    # 查询集群是否存在
+    try:
+        cluster_info = Cluster.query.filter_by(id=cluster_id).first()
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify({"code": 10002, "msg": "查询集群失败"})
+
+    if cluster_info is None:
+        return jsonify({"code": 10009, "msg": "集群不存在"})
+
+    if cluster_info.status == "deleted":
+        return jsonify({"code": 10009, "msg": "集群已下线"})
+    elif cluster_info.status == "inactive":
+        return jsonify({"code": 10009, "msg": "集群连接失败"})
+
+    cluster_name = cluster_info.name
+    api_host = cluster_info.api_host
+    token = cluster_info.token
+    k8s = Kubernetes(api_host=api_host, token=token)
+
+    return jsonify({"code": 200, "msg": "查询namespace成功", "cluster_name": cluster_name,"namespace_list": k8s.get_namespace_list()})

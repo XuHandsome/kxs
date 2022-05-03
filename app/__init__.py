@@ -22,7 +22,8 @@ def create_app(env_name):
     Session(app)
 
     # 注册蓝图
-    from .api import cluster
+    from .api import cluster, namespace
 
     app.register_blueprint(cluster, url_prefix="/cluster")
+    app.register_blueprint(namespace, url_prefix="/namespace")
     return app

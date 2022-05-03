@@ -9,6 +9,11 @@
 - [x]   cluster/list
 - [ ]   ...
 
+#### Namespace
+- [x]   namespace/list
+- [x]   namespace/add
+- [x]   namespace/delete
+
 #### Pod
 - [ ]   pod/list
 - [ ]   ...
