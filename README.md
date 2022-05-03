@@ -4,7 +4,8 @@
 
 #### Cluster
 - [x]   cluster/add
-- [ ]   cluster/access 
+- [x]   cluster/delete
+- [x]   cluster/update
 - [x]   cluster/list
 - [ ]   ...
 
